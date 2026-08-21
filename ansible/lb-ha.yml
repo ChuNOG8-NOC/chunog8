@@ -1,0 +1,53 @@
+- hosts: control_plane
+  become: true
+  tasks:
+    - name: HAProxy/keepalivedインストール
+      apt:
+        name:
+          - haproxy
+          - keepalived
+        state: present
+        update_cache: true
+
+    - name: ip_nonlocal_bindを有効化(VIPへのbind許可)
+      sysctl:
+        name: net.ipv4.ip_nonlocal_bind
+        value: '1'
+        sysctl_set: true
+        state: present
+        reload: true
+
+    - name: haproxy.cfg配置
+      template:
+        src: templates/haproxy.cfg.j2
+        dest: /etc/haproxy/haproxy.cfg
+      notify: restart haproxy
+
+    - name: keepalived.conf配置
+      template:
+        src: templates/keepalived-lb.conf.j2
+        dest: /etc/keepalived/keepalived.conf
+      notify: restart keepalived
+
+    - name: haproxy起動・有効化
+      service:
+        name: haproxy
+        state: started
+        enabled: true
+
+    - name: keepalived起動・有効化
+      service:
+        name: keepalived
+        state: started
+        enabled: true
+
+  handlers:
+    - name: restart haproxy
+      service:
+        name: haproxy
+        state: restarted
+
+    - name: restart keepalived
+      service:
+        name: keepalived
+        state: restarted
