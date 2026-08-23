@@ -1,0 +1,41 @@
+# Chart: bitnami/redis 28.0.10 (Redis 8.10.1)
+image:
+  registry: registry-1.docker.io
+  repository: bitnami/redis
+  # Multi-architecture digest published on 2026-08-22. A digest overrides
+  # the mutable default image channel supplied by the chart.
+  digest: sha256:d75bda00b778ad5e03a639ec36e00f6665a5d7e0f35a6250be5b103fb2117275
+
+architecture: standalone
+
+auth:
+  enabled: true
+  sentinel: false
+  existingSecret: netbox-redis
+  existingSecretPasswordKey: redis-password
+
+master:
+  resourcesPreset: none
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  persistence:
+    enabled: true
+    storageClass: nfs-observability
+    accessModes:
+      - ReadWriteOnce
+    size: 5Gi
+
+replica:
+  replicaCount: 0
+
+sentinel:
+  enabled: false
+
+metrics:
+  enabled: false
+

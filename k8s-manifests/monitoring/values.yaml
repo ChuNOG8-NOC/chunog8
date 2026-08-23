@@ -1,0 +1,137 @@
+# Chart: prometheus-community/kube-prometheus-stack 88.5.3
+kubeTargetVersionOverride: 1.36.0
+kubeVersionOverride: 1.36.0
+
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 300m
+        memory: 512Mi
+
+grafana:
+  enabled: true
+  replicas: 1
+  defaultDashboardsEnabled: true
+  defaultDashboardsTimezone: Asia/Tokyo
+  admin:
+    existingSecret: monitoring-secrets
+    userKey: grafana-admin-user
+    passwordKey: grafana-admin-password
+  ingress:
+    enabled: false
+  service:
+    type: LoadBalancer
+    loadBalancerIP: 10.8.30.104
+    loadBalancerSourceRanges:
+      - 10.8.30.0/24
+    externalTrafficPolicy: Local
+    annotations:
+      metallb.io/address-pool: observability-fixed
+  persistence:
+    enabled: true
+    type: sts
+    storageClassName: local-observability
+    accessModes:
+      - ReadWriteOnce
+    size: 5Gi
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
+  nodeSelector:
+    kubernetes.io/hostname: worker02
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 750m
+      memory: 1Gi
+  grafana.ini:
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+    security:
+      cookie_secure: false
+    users:
+      allow_sign_up: false
+
+prometheus:
+  enabled: true
+  service:
+    type: LoadBalancer
+    loadBalancerIP: 10.8.30.102
+    loadBalancerSourceRanges:
+      - 10.8.30.0/24
+    externalTrafficPolicy: Local
+    annotations:
+      metallb.io/address-pool: observability-fixed
+  prometheusSpec:
+    replicas: 1
+    shards: 1
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+    retention: 7d
+    retentionSize: 25GiB
+    walCompression: true
+    nodeSelector:
+      kubernetes.io/hostname: worker01
+    persistentVolumeClaimRetentionPolicy:
+      whenDeleted: Retain
+      whenScaled: Retain
+    resources:
+      requests:
+        cpu: 750m
+        memory: 2Gi
+      limits:
+        cpu: "2"
+        memory: 4Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-observability
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 40Gi
+
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  prometheusConfigReloader:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi

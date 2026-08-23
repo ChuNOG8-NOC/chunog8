@@ -45,6 +45,7 @@
           - ca-certificates
           - apt-transport-https
           - gnupg
+          - nfs-common
         update_cache: true
 
     - name: containerd導入

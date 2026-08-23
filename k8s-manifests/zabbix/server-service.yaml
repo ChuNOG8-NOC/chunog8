@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zabbix-server-external
+  namespace: zabbix
+  annotations:
+    metallb.io/address-pool: observability-fixed
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  loadBalancerIP: 10.8.30.105
+  loadBalancerSourceRanges:
+    - 10.8.30.0/24
+    - 10.8.10.0/24
+  ports:
+    - name: zabbix-server
+      protocol: TCP
+      port: 10051
+      targetPort: 10051
+  selector:
+    app.kubernetes.io/name: zabbix
+    app.kubernetes.io/instance: zabbix
+    app.kubernetes.io/component: server
+

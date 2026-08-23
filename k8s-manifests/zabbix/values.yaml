@@ -1,0 +1,148 @@
+# Chart: zabbix-community/zabbix 7.1.0 (Zabbix 7.0.23 LTS)
+zabbixImageTag: ubuntu-7.0.23
+
+postgresAccess:
+  existingSecretName: zabbix-db-credentials
+  secretHostKey: host
+  secretPortKey: port
+  secretUserKey: user
+  secretPasswordKey: password
+  secretDBKey: dbname
+
+zabbixServer:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 400m
+      memory: 768Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  service:
+    type: ClusterIP
+    port: 10051
+  livenessProbe:
+    tcpSocket:
+      port: zabbix-server
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  readinessProbe:
+    tcpSocket:
+      port: zabbix-server
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  startupProbe:
+    tcpSocket:
+      port: zabbix-server
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 30
+
+postgresql:
+  enabled: true
+  image:
+    repository: postgres
+    tag: 16.12-bookworm
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 300m
+      memory: 768Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+  persistence:
+    enabled: true
+    storageSize: 80Gi
+    claim_access_mode: ReadWriteOnce
+    storageClass: nfs-observability
+  extraRuntimeParameters:
+    max_connections: 100
+    shared_buffers: 256MB
+    effective_cache_size: 768MB
+  livenessProbe:
+    tcpSocket:
+      port: 5432
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  readinessProbe:
+    exec:
+      command:
+        - /bin/sh
+        - -ec
+        - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  startupProbe:
+    tcpSocket:
+      port: 5432
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 30
+
+zabbixAgent:
+  enabled: false
+
+zabbixWeb:
+  enabled: true
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  service:
+    type: LoadBalancer
+    externalTrafficPolicy: Local
+    loadBalancerIP: 10.8.30.100
+    loadBalancerSourceRanges:
+      - 10.8.30.0/24
+    port: 80
+    annotations:
+      metallb.io/address-pool: observability-fixed
+  startupProbe:
+    httpGet:
+      path: /ping
+      port: zabbix-web
+      scheme: HTTP
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 30
+
+zabbixWebService:
+  enabled: false
+
+zabbixProxy:
+  enabled: false
+
+zabbixJavaGateway:
+  enabled: false
+
+zabbixBrowserMonitoring:
+  enabled: false
+
+ingress:
+  enabled: false
+
+helmTestJobs:
+  webConnection:
+    image:
+      repository: busybox
+      tag: "1.38.0"
+      pullPolicy: IfNotPresent
+  serverConnection:
+    image:
+      repository: busybox
+      tag: "1.38.0"
+      pullPolicy: IfNotPresent

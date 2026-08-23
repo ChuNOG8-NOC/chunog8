@@ -1,0 +1,51 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: monitoring-ingress
+  namespace: monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: monitoring
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector: {}
+    - from:
+        - ipBlock:
+            cidr: 10.8.30.0/24
+      ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 10250
+---
+# Prometheus と Alertmanager の Pod は Operator が生成するため、
+# app.kubernetes.io/instance が Helm release 名 (monitoring) ではなく CR 名になる。
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: monitoring-operator-managed-ingress
+  namespace: monitoring
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values:
+          - prometheus
+          - alertmanager
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector: {}
+    - from:
+        - ipBlock:
+            cidr: 10.8.30.0/24
+      ports:
+        - protocol: TCP
+          port: 9090
+        - protocol: TCP
+          port: 9093

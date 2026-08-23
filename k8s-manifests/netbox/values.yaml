@@ -1,0 +1,127 @@
+# Chart: netbox/netbox 8.3.61 (NetBox 4.6.8)
+image:
+  registry: ghcr.io
+  repository: netbox-community/netbox
+  tag: v4.6.8
+  pullPolicy: IfNotPresent
+
+superuser:
+  name: admin
+  email: noc@example.invalid
+  existingSecret: netbox-superuser
+
+allowedHosts:
+  - 10.8.30.103
+  - netbox
+  - netbox.netbox.svc
+  - netbox.netbox.svc.cluster.local
+allowedHostsIncludesPodIP: true
+
+existingSecret: netbox-config
+
+replicaCount: 1
+
+persistence:
+  enabled: true
+  storageClass: nfs-observability
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+reportsPersistence:
+  enabled: false
+
+scriptsPersistence:
+  enabled: false
+
+resourcesPreset: none
+resources:
+  requests:
+    cpu: 400m
+    memory: 768Mi
+  limits:
+    cpu: 1500m
+    memory: 2Gi
+
+service:
+  type: LoadBalancer
+  loadBalancerIP: 10.8.30.103
+  loadBalancerSourceRanges:
+    - 10.8.30.0/24
+  externalTrafficPolicy: Local
+  annotations:
+    metallb.io/address-pool: observability-fixed
+
+ingress:
+  enabled: false
+
+postgresql:
+  enabled: true
+  architecture: standalone
+  image:
+    # Multi-architecture digest published on 2026-08-22. A digest is used
+    # because this chart's default image channel is mutable.
+    digest: sha256:40a261ed77f3b8dc65eeeec98bb79c4d3ef3410d7e2af7cfcf3785a6af00e4c5
+  auth:
+    username: netbox
+    database: netbox
+    existingSecret: netbox-postgresql
+    secretKeys:
+      adminPasswordKey: postgres-password
+      userPasswordKey: password
+      replicationPasswordKey: replication-password
+  primary:
+    persistence:
+      enabled: true
+      storageClass: nfs-observability
+      accessModes:
+        - ReadWriteOnce
+      size: 20Gi
+    resourcesPreset: none
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1536Mi
+
+valkey:
+  enabled: false
+
+tasksDatabase:
+  host: netbox-redis-master
+  port: 6379
+  database: 0
+  existingSecretName: netbox-redis
+  existingSecretKey: redis-password
+
+cachingDatabase:
+  host: netbox-redis-master
+  port: 6379
+  database: 1
+  existingSecretName: netbox-redis
+  existingSecretKey: redis-password
+
+housekeeping:
+  enabled: true
+  timezone: Asia/Tokyo
+  resourcesPreset: none
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 512Mi
+
+worker:
+  enabled: true
+  replicaCount: 1
+  resourcesPreset: none
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1536Mi

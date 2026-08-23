@@ -4,8 +4,20 @@ metadata:
   name: default-pool
   namespace: metallb-system
 spec:
+  autoAssign: true
   addresses:
-    - 10.8.30.100-10.8.30.149
+    - 10.8.30.106-10.8.30.149
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: observability-fixed
+  namespace: metallb-system
+spec:
+  autoAssign: false
+  addresses:
+    - 10.8.30.100/32
+    - 10.8.30.102-10.8.30.105
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
@@ -15,3 +27,4 @@ metadata:
 spec:
   ipAddressPools:
     - default-pool
+    - observability-fixed
