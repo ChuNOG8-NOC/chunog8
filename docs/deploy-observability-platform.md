@@ -30,12 +30,12 @@ kubectl create namespace zabbix
 kubectl create namespace netbox
 kubectl create namespace monitoring
 
-cp k8s-manifests/zabbix/secrets.env.example k8s-manifests/zabbix/secrets.env
-cp k8s-manifests/netbox/config.secrets.env.example k8s-manifests/netbox/config.secrets.env
-cp k8s-manifests/netbox/superuser.secrets.env.example k8s-manifests/netbox/superuser.secrets.env
-cp k8s-manifests/netbox/postgresql.secrets.env.example k8s-manifests/netbox/postgresql.secrets.env
-cp k8s-manifests/netbox/redis.secrets.env.example k8s-manifests/netbox/redis.secrets.env
-cp k8s-manifests/monitoring/secrets.env.example k8s-manifests/monitoring/secrets.env
+install -m 0600 k8s-manifests/zabbix/secrets.env.example k8s-manifests/zabbix/secrets.env
+install -m 0600 k8s-manifests/netbox/config.secrets.env.example k8s-manifests/netbox/config.secrets.env
+install -m 0600 k8s-manifests/netbox/superuser.secrets.env.example k8s-manifests/netbox/superuser.secrets.env
+install -m 0600 k8s-manifests/netbox/postgresql.secrets.env.example k8s-manifests/netbox/postgresql.secrets.env
+install -m 0600 k8s-manifests/netbox/redis.secrets.env.example k8s-manifests/netbox/redis.secrets.env
+install -m 0600 k8s-manifests/monitoring/secrets.env.example k8s-manifests/monitoring/secrets.env
 
 kubectl -n zabbix create secret generic zabbix-db-credentials --from-env-file=k8s-manifests/zabbix/secrets.env
 kubectl -n netbox create secret generic netbox-config --from-env-file=k8s-manifests/netbox/config.secrets.env
@@ -57,9 +57,9 @@ helm upgrade --install zabbix zabbix-community/zabbix --version 7.1.0 -n zabbix 
 kubectl apply -f k8s-manifests/zabbix/server-service.yaml
 kubectl apply -f k8s-manifests/zabbix/policies.yaml
 
+kubectl apply -f k8s-manifests/netbox/network-policy.yaml
 helm upgrade --install netbox-redis oci://registry-1.docker.io/bitnamicharts/redis --version 28.0.10 -n netbox -f k8s-manifests/netbox/redis-values.yaml --wait
 helm upgrade --install netbox netbox/netbox --version 8.3.61 -n netbox -f k8s-manifests/netbox/values.yaml --wait
-kubectl apply -f k8s-manifests/netbox/network-policy.yaml
 
 helm upgrade --install monitoring prometheus-community/kube-prometheus-stack --version 88.5.3 -n monitoring -f k8s-manifests/monitoring/values.yaml --wait
 kubectl apply -f k8s-manifests/monitoring/network-policy.yaml

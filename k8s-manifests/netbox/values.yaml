@@ -24,7 +24,8 @@ replicaCount: 1
 persistence:
   enabled: true
   storageClass: nfs-observability
-  accessMode: ReadWriteOnce
+  # Web、worker、housekeeping が異なる Worker から同じ media を共有する。
+  accessMode: ReadWriteMany
   size: 10Gi
 
 reportsPersistence:
@@ -70,6 +71,10 @@ postgresql:
       userPasswordKey: password
       replicationPasswordKey: replication-password
   primary:
+    # k8s-manifests/netbox/network-policy.yaml に一本化する。
+    # Chart 既定の allowExternal=true の Policy と併用すると接続元を制限できない。
+    networkPolicy:
+      enabled: false
     persistence:
       enabled: true
       storageClass: nfs-observability

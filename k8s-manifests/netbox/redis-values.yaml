@@ -14,6 +14,11 @@ auth:
   existingSecret: netbox-redis
   existingSecretPasswordKey: redis-password
 
+# k8s-manifests/netbox/network-policy.yaml で接続元を NetBox Pod のみに制限する。
+# Chart 既定の Policy は allowExternal=true のため、併用すると制限が打ち消される。
+networkPolicy:
+  enabled: false
+
 master:
   resourcesPreset: none
   resources:
@@ -38,4 +43,3 @@ sentinel:
 
 metrics:
   enabled: false
-
