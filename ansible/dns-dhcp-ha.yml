@@ -1,0 +1,71 @@
+- hosts: workers
+  become: true
+  tasks:
+    - name: keepalived/Kea/BIND導入
+      apt:
+        name:
+          - keepalived
+          - kea-dhcp4-server
+          - bind9
+        state: present
+        update_cache: true
+
+    - name: keepalived.conf配置
+      template:
+        src: templates/keepalived-dns-dhcp.conf.j2
+        dest: /etc/keepalived/keepalived.conf
+      notify: restart keepalived
+
+    - name: BIND named.conf.options配置
+      template:
+        src: templates/named.conf.options.j2
+        dest: /etc/bind/named.conf.options
+      notify: restart named
+
+    - name: Kea secondary設定配置
+      template:
+        src: templates/kea-dhcp4-secondary.conf.j2
+        dest: /etc/kea/kea-dhcp4.conf
+
+    - name: notifyスクリプト配置ディレクトリ作成
+      file:
+        path: /opt/dns-dhcp-ha
+        state: directory
+        mode: '0755'
+
+    - name: notify-master.sh配置
+      copy:
+        src: templates/notify-master.sh
+        dest: /opt/dns-dhcp-ha/notify-master.sh
+        mode: '0755'
+
+    - name: notify-backup.sh配置
+      copy:
+        src: templates/notify-backup.sh
+        dest: /opt/dns-dhcp-ha/notify-backup.sh
+        mode: '0755'
+
+    - name: kea-dhcp4-server/namedは普段停止(keepalivedが制御する)
+      service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop:
+        - kea-dhcp4-server
+        - named
+
+    - name: keepalived起動・有効化
+      service:
+        name: keepalived
+        state: started
+        enabled: true
+
+  handlers:
+    - name: restart keepalived
+      service:
+        name: keepalived
+        state: restarted
+    - name: restart named
+      service:
+        name: named
+        state: restarted

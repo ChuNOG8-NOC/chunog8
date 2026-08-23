@@ -1,0 +1,15 @@
+- hosts: all_servers
+  become: true
+  tasks:
+    - name: rsyslog転送設定を配置
+      copy:
+        dest: /etc/rsyslog.d/60-forward.conf
+        content: |
+          *.* @10.8.30.101:514
+      notify: restart rsyslog
+
+  handlers:
+    - name: restart rsyslog
+      service:
+        name: rsyslog
+        state: restarted

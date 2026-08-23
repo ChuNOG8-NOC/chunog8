@@ -1,0 +1,36 @@
+acl "trusted" {
+        127.0.0.1;
+        ::1;
+        10.8.30.0/24;
+        202.222.168.0/22;
+        2001:df0:68:168::/64;
+};
+
+options {
+        directory "/var/cache/bind";
+
+        recursion yes;
+
+        allow-query {
+                trusted;
+        };
+
+        allow-recursion {
+                trusted;
+        };
+
+        allow-query-cache {
+                trusted;
+        };
+
+        listen-on {
+                127.0.0.1;
+                10.8.30.60;
+        };
+
+        listen-on-v6 {
+                any;
+        };
+
+        dnssec-validation auto;
+};

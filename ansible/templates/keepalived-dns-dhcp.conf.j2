@@ -1,0 +1,42 @@
+global_defs {
+   enable_script_security
+   script_user root
+}
+
+vrrp_instance DNS_DHCP_HA {
+    state BACKUP
+    interface eth0
+    virtual_router_id 52
+    priority {{ vrrp_priority }}
+    authentication {
+        auth_type PASS
+        auth_pass dnsdhcpvip
+    }
+    virtual_ipaddress {
+        10.8.30.60/24
+    }
+}
+
+vrrp_instance DNS_DHCP_HA_V6 {
+    state BACKUP
+    interface eth0
+    virtual_router_id 53
+    priority {{ vrrp_priority }}
+    authentication {
+        auth_type PASS
+        auth_pass dnsdhcpvip
+    }
+    virtual_ipaddress {
+        2001:df0:68:168::60/64
+    }
+}
+
+vrrp_sync_group VG_DNS_DHCP {
+    group {
+        DNS_DHCP_HA
+        DNS_DHCP_HA_V6
+    }
+    notify_master "/opt/dns-dhcp-ha/notify-master.sh"
+    notify_backup "/opt/dns-dhcp-ha/notify-backup.sh"
+    notify_fault  "/opt/dns-dhcp-ha/notify-backup.sh"
+}
