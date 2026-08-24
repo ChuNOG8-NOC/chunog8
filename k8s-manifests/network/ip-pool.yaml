@@ -4,6 +4,7 @@ metadata:
   name: static-pool
   namespace: metallb-system
 spec:
+  autoAssign: false
   addresses:
     - 10.8.30.100/32
     - 10.8.30.102/32
@@ -17,17 +18,9 @@ metadata:
   name: dynamic-pool
   namespace: metallb-system
 spec:
+  autoAssign: true
   addresses:
     - 10.8.30.106-10.8.30.149
----
-apiVersion: metallb.io/v1beta1
-kind: L2Advertisement
-metadata:
-  name: static-l2adv
-  namespace: metallb-system
-spec:
-  ipAddressPools:
-    - static-pool
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
@@ -37,3 +30,12 @@ metadata:
 spec:
   ipAddressPools:
     - dynamic-pool
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: static-l2adv
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - static-pool

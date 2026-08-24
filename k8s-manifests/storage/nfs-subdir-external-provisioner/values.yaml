@@ -1,0 +1,36 @@
+# Chart: nfs-subdir-external-provisioner/nfs-subdir-external-provisioner 4.0.18
+image:
+  repository: registry.k8s.io/sig-storage/nfs-subdir-external-provisioner
+  tag: v4.0.2
+
+nfs:
+  server: 10.8.30.20
+  path: /srv/nfs/k8s
+  mountOptions:
+    - nfsvers=4.1
+    - hard
+    - timeo=600
+    - retrans=2
+  reclaimPolicy: Retain
+
+storageClass:
+  create: true
+  provisionerName: chunog.local/nfs-observability
+  defaultClass: false
+  name: nfs-observability
+  allowVolumeExpansion: true
+  reclaimPolicy: Retain
+  archiveOnDelete: true
+  onDelete: retain
+  pathPattern: "${.PVC.namespace}/${.PVC.name}"
+  accessModes: ReadWriteOnce
+  volumeBindingMode: Immediate
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+

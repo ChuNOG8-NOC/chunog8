@@ -1,0 +1,41 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: netbox-ingress
+  namespace: netbox
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: netbox
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector: {}
+    - from:
+        - ipBlock:
+            cidr: 10.8.30.0/24
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: netbox-redis-ingress
+  namespace: netbox
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: netbox-redis
+      app.kubernetes.io/name: redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: netbox
+      ports:
+        - protocol: TCP
+          port: 6379

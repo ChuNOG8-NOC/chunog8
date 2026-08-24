@@ -1,3 +1,5 @@
+# Local credential files (the committed samples end in .example).
+*.env
 terraform.tfvars
 *.tfstate
 *.tfstate.backup

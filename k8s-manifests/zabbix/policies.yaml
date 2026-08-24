@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: zabbix-ingress
+  namespace: zabbix
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: zabbix
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector: {}
+    # Web UI は NOC 管理ネットワークからのみ。
+    - from:
+        - ipBlock:
+            cidr: 10.8.30.0/24
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Zabbix Server は監視対象セグメントからも受け付ける。
+    - from:
+        - ipBlock:
+            cidr: 10.8.30.0/24
+        - ipBlock:
+            cidr: 10.8.10.0/24
+      ports:
+        - protocol: TCP
+          port: 10051
