@@ -50,7 +50,7 @@ service:
     - 10.8.30.0/24
   externalTrafficPolicy: Local
   annotations:
-    metallb.io/address-pool: observability-fixed
+    metallb.io/address-pool: static-pool
 
 ingress:
   enabled: false

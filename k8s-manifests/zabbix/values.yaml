@@ -110,7 +110,7 @@ zabbixWeb:
       - 10.8.30.0/24
     port: 80
     annotations:
-      metallb.io/address-pool: observability-fixed
+      metallb.io/address-pool: static-pool
   startupProbe:
     httpGet:
       path: /ping

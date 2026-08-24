@@ -4,7 +4,7 @@ metadata:
   name: zabbix-server-external
   namespace: zabbix
   annotations:
-    metallb.io/address-pool: observability-fixed
+    metallb.io/address-pool: static-pool
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
