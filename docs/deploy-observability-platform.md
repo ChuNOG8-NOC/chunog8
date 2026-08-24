@@ -65,7 +65,7 @@ helm upgrade --install monitoring prometheus-community/kube-prometheus-stack --v
 kubectl apply -f k8s-manifests/monitoring/network-policy.yaml
 ~~~
 
-適用前の確認には各コマンドの helm upgrade --install を helm template に置き換える。
+適用前は各コマンドを `helm template <release> <chart> ...` に変更し、`--wait` と `--create-namespace` を外してレンダリング結果を確認する。
 
 ## 確認
 
