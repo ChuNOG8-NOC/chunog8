@@ -105,7 +105,7 @@ zabbixWeb:
   service:
     type: LoadBalancer
     externalTrafficPolicy: Local
-    loadBalancerIP: 10.8.30.100
+    loadBalancerIP: 10.8.30.105
     loadBalancerSourceRanges:
       - 10.8.30.0/24
     port: 80

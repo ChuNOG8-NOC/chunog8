@@ -76,8 +76,8 @@ kubectl get svc -n netbox
 kubectl get svc -n monitoring
 ~~~
 
-- Zabbix: http://10.8.30.100/
+- Zabbix: http://10.8.30.105/
 - Prometheus: http://10.8.30.102/
 - NetBox: http://10.8.30.103/
 - Grafana: http://10.8.30.104/
-- Zabbix Server: 10.8.30.105:10051/TCP（送信元は 10.8.30.0/24 と 10.8.10.0/24）
+- Zabbix Server: 10.8.30.100:10051/TCP（送信元は 10.8.30.0/24 と 10.8.10.0/24）

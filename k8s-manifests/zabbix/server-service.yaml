@@ -8,7 +8,7 @@ metadata:
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
-  loadBalancerIP: 10.8.30.105
+  loadBalancerIP: 10.8.30.100
   loadBalancerSourceRanges:
     - 10.8.30.0/24
     - 10.8.10.0/24
@@ -21,4 +21,3 @@ spec:
     app.kubernetes.io/name: zabbix
     app.kubernetes.io/instance: zabbix
     app.kubernetes.io/component: server
-

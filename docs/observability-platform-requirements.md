@@ -90,8 +90,8 @@ GitHub で管理する対象は以下のとおり。
 - 利用可能なドメイン名および HTTPS 証明書はないため、Web UI は内部ネットワーク上の固定 IPv4 アドレスへ HTTP でアクセスする。
 - Ingress Controller と cert-manager は今回導入せず、各 Web UI の Service を MetalLB の `LoadBalancer` として公開する。
 - Zabbix、NetBox、Grafana はアプリケーション側のログイン認証を有効にする。
-- Zabbix Web UI は `10.8.30.100`、Prometheus は `10.8.30.102`、NetBox は `10.8.30.103`、Grafana は `10.8.30.104` で公開する。
-- Zabbix Server の監視受信ポートは Web UI とは別の Service として `10.8.30.105` で公開する。
+- Zabbix Web UI は `10.8.30.105`、Prometheus は `10.8.30.102`、NetBox は `10.8.30.103`、Grafana は `10.8.30.104` で公開する。
+- Zabbix Server の監視受信ポートは Web UI とは別の Service として `10.8.30.100` で公開する。
 - Zabbix Server への接続を許可する送信元は `10.8.30.0/24` と `10.8.10.0/24` とする。
 - SNMP community は利用者から別途提供された値を使用するが、認証情報のため本リポジトリおよび本要件書には平文で保存しない。
 - 永続データは、Prometheus TSDB と Grafana DB を除き `infra-vm` (`10.8.30.20`) の既存 NFS サーバへ保存する。
@@ -202,7 +202,7 @@ Prometheus は標準 Web UI から監視対象を恒久的に追加する製品�
 
 | Web UI | 固定 IP 候補 | URL候補 | 状態 |
 | --- | --- | --- | --- |
-| Zabbix | `10.8.30.100` | `http://10.8.30.100/` | 確定 |
+| Zabbix | `10.8.30.105` | `http://10.8.30.105/` | 確定 |
 | Prometheus | `10.8.30.102` | `http://10.8.30.102/` | 確定 |
 | NetBox | `10.8.30.103` | `http://10.8.30.103/` | 確定 |
 | Grafana | `10.8.30.104` | `http://10.8.30.104/` | 確定 |
@@ -213,8 +213,8 @@ Zabbix Web UI と Zabbix Server は別の Deployment / Service であるため�
 
 | 用途 | 固定 IP | ポート | 状態 |
 | --- | --- | --- | --- |
-| Zabbix Agent アクティブチェック、Zabbix Sender | `10.8.30.105` | `10051/TCP` | 確定（送信元 `10.8.30.0/24`、`10.8.10.0/24`） |
-| SNMP trap 受信 | `10.8.30.105` | `162/UDP` | 条件付き確定 |
+| Zabbix Agent アクティブチェック、Zabbix Sender | `10.8.30.100` | `10051/TCP` | 確定（送信元 `10.8.30.0/24`、`10.8.10.0/24`） |
+| SNMP trap 受信 | `10.8.30.100` | `162/UDP` | 条件付き確定 |
 
 - 同一 Service で TCP と UDP を混在させる。Kubernetes 1.36 では mixed protocol の `LoadBalancer` Service が利用可能であることを前提とする。
 - Zabbix Server への接続元は Web UI とは異なり、監視対象機器・サーバが属するセグメントを `loadBalancerSourceRanges` で許可する。許可する送信元範囲は `10.8.30.0/24` と `10.8.10.0/24` とする。
@@ -389,7 +389,7 @@ Helm でデプロイする前に、Ansible で完了させておくノード側�
 | --- | --- | --- | --- |
 | NFS client 導入 | worker01、worker02 | `nfs-common` パッケージを導入 | 確定 |
 | 時刻同期 | 全ホスト | `chrony` を導入し `ntp.nict.jp` を参照 | 確定 |
-| Zabbix Agent 2 導入 | 監視対象の Linux サーバ・VM | Zabbix Server `10.8.30.105:10051` を参照 | 確定 |
+| Zabbix Agent 2 導入 | 監視対象の Linux サーバ・VM | Zabbix Server `10.8.30.100:10051` を参照 | 確定 |
 | NFS export 見直し | infra-vm | 公開先を Worker 2台に限定、`no_root_squash` は維持 | 確定 |
 
 Stork Agent、Kea統計取得用hook/管理API、BINDの`statistics-channels`は初期実装のAnsible対象に含めず、第2段階で追加する。
@@ -537,3 +537,4 @@ DNS・DHCP サービスは Kubernetes Worker 上で稼働するが、サービ�
 | 2026-08-24 | NFS の `no_root_squash` を維持する | `root_squash` にすると PostgreSQL の `initdb` と kubelet の `fsGroup` 適用が失敗し、Zabbix と NetBox の DB が起動できないため。export 先を Worker 2台へ限定して影響範囲を抑える |
 | 2026-08-24 | Redis chart を `oci://registry-1.docker.io/bitnamicharts/redis` から取得する | HTTP repo `charts.bitnami.com/bitnami` は凍結され redis 20.3.0 までしか配信しておらず、採用する 28.0.10 が取得できないため |
 | 2026-08-24 | Prometheus と Alertmanager 用の NetworkPolicy を別定義にする | Operator が生成する Pod の `app.kubernetes.io/instance` が Helm release 名と一致せず、release 名基準の podSelector では選択されないため |
+| 2026-08-25 | Zabbix Web UI を `10.8.30.105`、Zabbix Server を `10.8.30.100` へ入れ替える | 利用者指定のアドレス割当に合わせるため。2026-08-23 の Zabbix Web UI / Server の割当を更新する |
