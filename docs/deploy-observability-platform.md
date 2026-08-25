@@ -67,6 +67,56 @@ kubectl apply -f k8s-manifests/monitoring/network-policy.yaml
 
 適用前は各コマンドを `helm template <release> <chart> ...` に変更し、`--wait` と `--create-namespace` を外してレンダリング結果を確認する。
 
+## Kubernetes control-plane metrics の有効化
+
+`kube-prometheus-stack` は controller-manager、scheduler、etcd、kube-proxy の metrics endpoint をnode IPでscrapeする。kubeadm既定構成ではこれらがloopbackだけで待ち受けるため、`ansible/enable-kubernetes-metrics.yml` でクラスタ内から到達可能にする。
+
+playbookは次を行う。
+
+- control-planeを `serial: 1` で1台ずつ処理する。
+- controller-managerとschedulerの `--bind-address` を `0.0.0.0` に変更する。これはkubeadmのloopback probeを維持しながらnode IPでも待ち受けるために必要となる。
+- etcdの `--listen-metrics-urls` に各control-plane nodeの `10.8.30.x:2381` を追加する。既存のloopback URLは維持する。
+- 各static Podの再作成とReady復帰を待ち、etcd変更後はendpoint healthを確認してから次のnodeへ進む。
+- kube-proxy ConfigMapの `metricsBindAddress` を `0.0.0.0:10249` に変更し、DaemonSetのrollout完了を待つ。
+- static Pod manifestを変更する際はAnsibleのbackupを作成する。
+
+metrics endpointはLoadBalancerでは公開されないが、etcdの2381/TCPとkube-proxyの10249/TCPにはアプリケーション認証がない。nodeが属する `10.8.30.0/24` を信頼済み管理ネットワークとして扱い、他セグメントからこれらのportへ到達させないこと。
+
+まず構文と変更予定を確認する。
+
+~~~sh
+ansible-playbook --syntax-check -i ansible/inventory.ini ansible/enable-kubernetes-metrics.yml
+ansible-playbook --check --diff -i ansible/inventory.ini ansible/enable-kubernetes-metrics.yml
+~~~
+
+本番反映は、各control-plane nodeを個別に適用・確認してからkube-proxyを更新する。
+
+~~~sh
+ansible-playbook -i ansible/inventory.ini ansible/enable-kubernetes-metrics.yml --tags control-plane-metrics --limit cp01
+kubectl get nodes
+kubectl -n kube-system get pod etcd-cp01 kube-controller-manager-cp01 kube-scheduler-cp01
+
+ansible-playbook -i ansible/inventory.ini ansible/enable-kubernetes-metrics.yml --tags control-plane-metrics --limit cp02
+kubectl get nodes
+kubectl -n kube-system get pod etcd-cp02 kube-controller-manager-cp02 kube-scheduler-cp02
+
+ansible-playbook -i ansible/inventory.ini ansible/enable-kubernetes-metrics.yml --tags control-plane-metrics --limit cp03
+kubectl get nodes
+kubectl -n kube-system get pod etcd-cp03 kube-controller-manager-cp03 kube-scheduler-cp03
+
+ansible-playbook -i ansible/inventory.ini ansible/enable-kubernetes-metrics.yml --tags kube-proxy-metrics --limit mgmt-vm
+kubectl -n kube-system rollout status daemonset/kube-proxy --timeout=180s
+~~~
+
+Prometheusのscrape interval 2回分（約1分）待って確認する。
+
+~~~sh
+curl -sS http://10.8.30.102:9090/api/v1/targets \
+  | jq '[.data.activeTargets[] | select(.health != "up") | {job: .labels.job, url: .scrapeUrl, error: .lastError}]'
+~~~
+
+出力が空配列 `[]` になり、PrometheusのTargets画面で46/46 Upになれば完了となる。
+
 ## 確認
 
 ~~~sh
@@ -77,7 +127,7 @@ kubectl get svc -n monitoring
 ~~~
 
 - Zabbix: http://10.8.30.105/
-- Prometheus: http://10.8.30.102/
+- Prometheus: http://10.8.30.102:9090/
 - NetBox: http://10.8.30.103/
 - Grafana: http://10.8.30.104/
 - Zabbix Server: 10.8.30.100:10051/TCP（送信元は 10.8.30.0/24 と 10.8.10.0/24）

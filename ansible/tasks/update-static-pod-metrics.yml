@@ -1,0 +1,104 @@
+---
+- name: "Static Pod manifestの存在を確認 | {{ metrics_component.name }}"
+  ansible.builtin.stat:
+    path: "{{ metrics_component.manifest }}"
+  register: metrics_manifest
+
+- name: "Static Pod manifestが存在することを検証 | {{ metrics_component.name }}"
+  ansible.builtin.assert:
+    that:
+      - metrics_manifest.stat.isreg | default(false)
+    fail_msg: "{{ metrics_component.manifest }} が見つかりません。"
+
+- name: "更新前のPod UIDを取得 | {{ metrics_component.name }}"
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --kubeconfig
+      - "{{ kubernetes_admin_kubeconfig }}"
+      - -n
+      - kube-system
+      - get
+      - pod
+      - "{{ metrics_component.name }}-{{ inventory_hostname }}"
+      - -o
+      - jsonpath={.metadata.uid}
+  register: metrics_old_pod_uid
+  changed_when: false
+  check_mode: false
+
+- name: "Metrics待受アドレスを更新 | {{ metrics_component.name }}"
+  ansible.builtin.replace:
+    path: "{{ metrics_component.manifest }}"
+    regexp: "{{ metrics_component.regexp }}"
+    replace: "{{ metrics_component.replace }}"
+    backup: true
+  register: metrics_manifest_update
+
+- name: "Podの再作成を待機 | {{ metrics_component.name }}"
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --kubeconfig
+      - "{{ kubernetes_admin_kubeconfig }}"
+      - -n
+      - kube-system
+      - get
+      - pod
+      - "{{ metrics_component.name }}-{{ inventory_hostname }}"
+      - -o
+      - jsonpath={.metadata.uid}
+  register: metrics_new_pod_uid
+  changed_when: false
+  until:
+    - metrics_new_pod_uid.rc == 0
+    - metrics_new_pod_uid.stdout != metrics_old_pod_uid.stdout
+  retries: 60
+  delay: 2
+  when:
+    - metrics_manifest_update is changed
+    - not ansible_check_mode
+
+- name: "PodのReady復帰を待機 | {{ metrics_component.name }}"
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --kubeconfig
+      - "{{ kubernetes_admin_kubeconfig }}"
+      - -n
+      - kube-system
+      - wait
+      - --for=condition=Ready
+      - "pod/{{ metrics_component.name }}-{{ inventory_hostname }}"
+      - --timeout=180s
+  changed_when: false
+  when:
+    - metrics_manifest_update is changed
+    - not ansible_check_mode
+
+- name: Etcd quorumの正常性を確認
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - --kubeconfig
+      - "{{ kubernetes_admin_kubeconfig }}"
+      - -n
+      - kube-system
+      - exec
+      - "etcd-{{ inventory_hostname }}"
+      - --
+      - etcdctl
+      - --endpoints=https://127.0.0.1:2379
+      - --cacert=/etc/kubernetes/pki/etcd/ca.crt
+      - --cert=/etc/kubernetes/pki/etcd/healthcheck-client.crt
+      - --key=/etc/kubernetes/pki/etcd/healthcheck-client.key
+      - endpoint
+      - health
+  register: etcd_endpoint_health
+  changed_when: false
+  retries: 12
+  delay: 5
+  until: etcd_endpoint_health.rc == 0
+  when:
+    - metrics_component.name == 'etcd'
+    - not ansible_check_mode

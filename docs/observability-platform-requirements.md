@@ -90,7 +90,7 @@ GitHub で管理する対象は以下のとおり。
 - 利用可能なドメイン名および HTTPS 証明書はないため、Web UI は内部ネットワーク上の固定 IPv4 アドレスへ HTTP でアクセスする。
 - Ingress Controller と cert-manager は今回導入せず、各 Web UI の Service を MetalLB の `LoadBalancer` として公開する。
 - Zabbix、NetBox、Grafana はアプリケーション側のログイン認証を有効にする。
-- Zabbix Web UI は `10.8.30.105`、Prometheus は `10.8.30.102`、NetBox は `10.8.30.103`、Grafana は `10.8.30.104` で公開する。
+- Zabbix Web UI は `10.8.30.105`、Prometheus は `10.8.30.102:9090`、NetBox は `10.8.30.103`、Grafana は `10.8.30.104` で公開する。
 - Zabbix Server の監視受信ポートは Web UI とは別の Service として `10.8.30.100` で公開する。
 - Zabbix Server への接続を許可する送信元は `10.8.30.0/24` と `10.8.10.0/24` とする。
 - SNMP community は利用者から別途提供された値を使用するが、認証情報のため本リポジトリおよび本要件書には平文で保存しない。
@@ -203,7 +203,7 @@ Prometheus は標準 Web UI から監視対象を恒久的に追加する製品�
 | Web UI | 固定 IP 候補 | URL候補 | 状態 |
 | --- | --- | --- | --- |
 | Zabbix | `10.8.30.105` | `http://10.8.30.105/` | 確定 |
-| Prometheus | `10.8.30.102` | `http://10.8.30.102/` | 確定 |
+| Prometheus | `10.8.30.102` | `http://10.8.30.102:9090/` | 確定 |
 | NetBox | `10.8.30.103` | `http://10.8.30.103/` | 確定 |
 | Grafana | `10.8.30.104` | `http://10.8.30.104/` | 確定 |
 
