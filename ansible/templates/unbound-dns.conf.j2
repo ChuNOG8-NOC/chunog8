@@ -1,0 +1,26 @@
+server:
+    # IPv4
+    interface: 127.0.0.1
+    interface: 10.8.30.60
+
+    # IPv6
+    interface: ::1
+    interface: 2001:df0:68:168::60
+
+    # 許可するネットワーク
+    access-control: 127.0.0.0/8 allow
+    access-control: ::1 allow
+    access-control: 10.8.10.0/24 allow
+    access-control: 10.8.30.0/24 allow
+    access-control: 202.222.168.0/22 allow
+    access-control: 2001:df0:68:168::/61 allow
+
+    # キャッシュ
+    cache-min-ttl: 300
+    cache-max-ttl: 86400
+
+    # プライバシー・セキュリティ
+    hide-identity: yes
+    hide-version: yes
+
+    port: 53

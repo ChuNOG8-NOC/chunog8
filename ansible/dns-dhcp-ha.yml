@@ -1,14 +1,19 @@
 - hosts: workers
   become: true
   tasks:
-    - name: keepalived/Kea/BIND導入
+    - name: keepalived/Kea/Unbound導入
       apt:
         name:
           - keepalived
           - kea-dhcp4-server
-          - bind9
+          - unbound
         state: present
         update_cache: true
+
+    - name: bind9が入っていれば削除
+      apt:
+        name: bind9
+        state: absent
 
     - name: keepalived.conf配置
       template:
@@ -16,11 +21,11 @@
         dest: /etc/keepalived/keepalived.conf
       notify: restart keepalived
 
-    - name: BIND named.conf.options配置
+    - name: Unbound設定配置
       template:
-        src: templates/named.conf.options.j2
-        dest: /etc/bind/named.conf.options
-      notify: restart named
+        src: templates/unbound-dns.conf.j2
+        dest: /etc/unbound/unbound.conf.d/dns.conf
+      notify: restart unbound
 
     - name: Kea secondary設定配置
       template:
@@ -45,14 +50,14 @@
         dest: /opt/dns-dhcp-ha/notify-backup.sh
         mode: '0755'
 
-    - name: kea-dhcp4-server/namedは普段停止(keepalivedが制御する)
+    - name: kea-dhcp4-server/unboundは普段停止(keepalivedが制御する)
       service:
         name: "{{ item }}"
         state: stopped
         enabled: false
       loop:
         - kea-dhcp4-server
-        - named
+        - unbound
 
     - name: keepalived起動・有効化
       service:
@@ -65,7 +70,7 @@
       service:
         name: keepalived
         state: restarted
-    - name: restart named
+    - name: restart unbound
       service:
-        name: named
+        name: unbound
         state: restarted
