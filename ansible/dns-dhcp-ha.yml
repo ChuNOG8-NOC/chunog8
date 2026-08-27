@@ -19,13 +19,11 @@
       template:
         src: templates/keepalived-dns-dhcp.conf.j2
         dest: /etc/keepalived/keepalived.conf
-      notify: restart keepalived
 
     - name: Unbound設定配置
       template:
         src: templates/unbound-dns.conf.j2
         dest: /etc/unbound/unbound.conf.d/dns.conf
-      notify: restart unbound
 
     - name: Kea secondary設定配置
       template:
@@ -59,18 +57,26 @@
         - kea-dhcp4-server
         - unbound
 
-    - name: keepalived起動・有効化
+    - name: keepalived有効化(起動状態は次のタスクで確定させる)
       service:
         name: keepalived
-        state: started
         enabled: true
 
-  handlers:
-    - name: restart keepalived
+    - name: keepalivedを必ず再起動しVRRP状態を再評価させる
       service:
         name: keepalived
         state: restarted
-    - name: restart unbound
-      service:
-        name: unbound
-        state: restarted
+
+    - name: VRRP再選定を待つ
+      ansible.builtin.pause:
+        seconds: 5
+
+    - name: MASTER側でサービスが起動してるか確認(失敗しても継続、目視確認用)
+      ansible.builtin.command: systemctl is-active unbound
+      register: unbound_active_check
+      changed_when: false
+      failed_when: false
+
+    - name: 確認結果を表示
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }}: unbound = {{ unbound_active_check.stdout }}"
